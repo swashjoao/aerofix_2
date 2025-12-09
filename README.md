@@ -13,7 +13,7 @@ $ cd backend
 
 backend $ npm install
 
-backend $ npm run dev
+backend $ npm start
 ```
 
 ### 2. Inicialização do Frontend

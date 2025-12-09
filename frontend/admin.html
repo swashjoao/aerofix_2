@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="style.css">
+    <title>AeroFix - Painel Administrativo</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-dark px-4">
+    <a class="navbar-brand" href="index.html">AeroFix</a>
+    <span class="text-white me-3">Painel Administrativo</span>
+    <button class="btn btn-danger btn-sm" onclick="logout()">Sair</button>
+</nav>
+
+<div class="container mt-4">
+
+    <h2 class="mb-4">Gerenciar Drones em Manutenção</h2>
+
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">Cadastrar / Editar Drone</div>
+        <div class="card-body">
+
+            <form id="droneForm">
+                <input type="hidden" id="droneId">
+
+                <div class="mb-3">
+                    <label class="form-label">Modelo do Drone</label>
+                    <input type="text" id="modelo" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Problema Reportado</label>
+                    <textarea id="problema" class="form-control" required></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Status</label>
+                    <select id="status" class="form-select" required>
+                        <option value="Aguardando">Aguardando</option>
+                        <option value="Em manutenção">Em manutenção</option>
+                        <option value="Finalizado">Finalizado</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Data de Entrada</label>
+                    <input type="date" id="data_entrada" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">URL da Foto (opcional)</label>
+                    <input type="text" id="foto_url" class="form-control">
+                </div>
+
+                <button type="submit" class="btn btn-success">Salvar</button>
+                <button type="button" class="btn btn-secondary" onclick="resetForm()">Limpar</button>
+            </form>
+
+        </div>
+    </div>
+
+    <h3 class="mb-3">Drones Registrados</h3>
+
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Modelo</th>
+            <th>Problema</th>
+            <th>Status</th>
+            <th>Entrada</th>
+            <th>Foto</th>
+            <th>Ações</th>
+        </tr>
+        </thead>
+        <tbody id="droneTableBody"></tbody>
+    </table>
+
+</div>
+
+<script>
+    const API_URL = "http://localhost:3000/drones";
+
+    if (localStorage.getItem("role") !== "admin") {
+        alert("Acesso restrito a administradores.");
+        window.location.href = "login.html";
+    }
+
+    function logout() {
+        localStorage.removeItem("role");
+        window.location.href = "login.html";
+    }
+
+    if (localStorage.getItem("role") !== "admin") {
+        logout();
+    }
+
+    document.addEventListener("DOMContentLoaded", loadDrones);
+
+    function loadDrones() {
+        fetch(API_URL)
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.getElementById("droneTableBody");
+                tbody.innerHTML = "";
+
+                data.forEach(drone => {
+                    tbody.innerHTML += `
+            <tr>
+              <td>${drone.id}</td>
+              <td>${drone.modelo}</td>
+              <td>${drone.problema}</td>
+              <td>${drone.status}</td>
+              <td>${drone.data_entrada}</td>
+              <td>${drone.foto_url ? `<img src="${drone.foto_url}" width="60">` : "—"}</td>
+              <td>
+                <button class="btn btn-warning btn-sm" onclick="editDrone(${drone.id})">Editar</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteDrone(${drone.id})">Excluir</button>
+              </td>
+            </tr>
+          `;
+                });
+            });
+    }
+
+    document.getElementById("droneForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const id = document.getElementById("droneId").value;
+        const drone = {
+            modelo: document.getElementById("modelo").value,
+            problema: document.getElementById("problema").value,
+            status: document.getElementById("status").value,
+            data_entrada: document.getElementById("data_entrada").value,
+            foto_url: document.getElementById("foto_url").value,
+        };
+
+        if (id) {
+            // EDITAR
+            fetch(`${API_URL}/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(drone),
+            }).then(() => {
+                resetForm();
+                loadDrones();
+            });
+
+        } else {
+            // CRIAR
+            fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(drone),
+            }).then(() => {
+                resetForm();
+                loadDrones();
+            });
+        }
+    });
+
+    function editDrone(id) {
+        fetch(`${API_URL}`)
+            .then(res => res.json())
+            .then(data => {
+                const drone = data.find(d => d.id === id);
+
+                document.getElementById("droneId").value = drone.id;
+                document.getElementById("modelo").value = drone.modelo;
+                document.getElementById("problema").value = drone.problema;
+                document.getElementById("status").value = drone.status;
+                document.getElementById("data_entrada").value = drone.data_entrada;
+                document.getElementById("foto_url").value = drone.foto_url;
+            });
+    }
+
+    function deleteDrone(id) {
+        if (!confirm("Tem certeza que deseja excluir este drone?")) return;
+
+        fetch(`${API_URL}/${id}`, { method: "DELETE" })
+            .then(() => loadDrones());
+    }
+
+    function resetForm() {
+        document.getElementById("droneId").value = "";
+        document.getElementById("droneForm").reset();
+    }
+</script>
+
+</body>
+</html>

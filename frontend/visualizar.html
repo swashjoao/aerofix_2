@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>AeroFix - Visualização</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<nav class="navbar navbar-dark bg-dark px-4">
+    <a class="navbar-brand" href="index.html">AeroFix</a>
+    <span class="text-white">Modo Visualização</span>
+    <button class="btn btn-outline-danger btn-sm" onclick="logout()">Sair</button>
+</nav>
+
+<div class="container mt-4">
+    <h2>Drones em Manutenção</h2>
+
+    <table class="table table-bordered table-striped mt-4">
+        <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Modelo</th>
+            <th>Problema</th>
+            <th>Status</th>
+            <th>Entrada</th>
+            <th>Foto</th>
+        </tr>
+        </thead>
+        <tbody id="droneTableBody"></tbody>
+    </table>
+
+</div>
+
+<script>
+    const API_URL = "http://localhost:3000/drones";
+
+    if (localStorage.getItem("role") !== "viewer") {
+        logout();
+    }
+
+    if (localStorage.getItem("role") !== "viewer") {
+        alert("Acesso permitido apenas para visualizadores.");
+        window.location.href = "login.html";
+    }
+
+    function logout(){
+        localStorage.removeItem("role");
+        window.location.href = "login.html";
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        fetch(API_URL)
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.getElementById("droneTableBody");
+                data.forEach(d => {
+                    tbody.innerHTML += `
+          <tr>
+            <td>${d.id}</td>
+            <td>${d.modelo}</td>
+            <td>${d.problema}</td>
+            <td>${d.status}</td>
+            <td>${d.data_entrada}</td>
+            <td>${d.foto_url ? `<img src="${d.foto_url}" width="60">` : "—"}</td>
+          </tr>
+        `;
+                });
+            });
+    });
+</script>
+
+</body>
+</html>
